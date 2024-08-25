@@ -1,0 +1,90 @@
+networks:
+  default:
+    driver: bridge
+
+services:
+  #---------------------------------------------------------#
+  # SERVICE: builds container
+  #---------------------------------------------------------#
+
+  build: &service_build
+    image: example-rust:build
+    container_name: example_rust_build
+
+    ports:
+      # HOST-IP:HOST-PORT:CONTAINER (note: uses values in .env)
+      - ${HTTP_IP}:${DOCKER_PORT_HOST}:${DOCKER_PORT_CONTAINER}
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: stage-build
+      args:
+        USER: "${DOCKER_USER}"
+        APP: "${DOCKER_APP}"
+        WORKDIR: "${DOCKER_WORKDIR}"
+        HTTP_IP: "0.0.0.0"
+        # NOTE: only this is different
+        HTTP_PORT: ${DOCKER_PORT_CONTAINER}
+        HTTP_USER: "${HTTP_USER}"
+        HTTP_PASSWORD: "${HTTP_PASSWORD}"
+
+    volumes:
+      - ./logs:${DOCKER_WORKDIR}/logs:rw
+      - ./dist:${DOCKER_WORKDIR}/dist:rw
+      - ./data:${DOCKER_WORKDIR}/data:rw
+      - ./target:${DOCKER_WORKDIR}/target:rw
+      - ./Cargo.toml:${DOCKER_WORKDIR}/Cargo.toml:ro
+      - ./justfile:${DOCKER_WORKDIR}/justfile:ro
+      - ./src:${DOCKER_WORKDIR}/src:ro
+
+    tty: false
+    stdin_open: true
+    command:
+      [ "echo", "success" ]
+
+  #---------------------------------------------------------#
+  # SERVICE: runs container
+  #---------------------------------------------------------#
+
+  run:
+    <<: *service_build
+    image: example-rust:run
+    container_name: example_rust_run
+    tty: true
+    stdin_open: false
+
+    command:
+      [ "bash", "-c", "just run" ]
+
+    restart: unless-stopped
+
+  #---------------------------------------------------------#
+  # SERVICE: runs container from binary artefact
+  #---------------------------------------------------------#
+
+  run-binary:
+    <<: *service_build
+    image: example-rust:run-binary
+    container_name: example_rust_run_binary
+    tty: true
+    stdin_open: false
+
+    command:
+      [ "bash", "-c", "just run-binary" ]
+
+    restart: unless-stopped
+
+  #---------------------------------------------------------#
+  # SERVICE: runs unit tests
+  #---------------------------------------------------------#
+
+  utests:
+    <<: *service_build
+    image: example-rust:utests
+    container_name: example_rust_utests
+    tty: false
+    stdin_open: false
+
+    command:
+      [ "bash", "-c", "just tests-unit" ]
