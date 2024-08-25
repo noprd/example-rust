@@ -1,0 +1,109 @@
+name: QA (automatic)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - develop
+      - staging
+
+    paths:
+      - '**/*'
+
+    # see <https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#discussion>
+    types:
+      - opened
+      - reopened
+      - unlocked
+      - edited
+      - assigned
+      - review_requested
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    name: QA
+    runs-on: ubuntu-latest
+    environment: "local"
+    env:
+      ARTEFACT_NAME: "${{ vars.ARTEFACT_NAME }}"
+      PROJECT_NAME: "${{ vars.PROJECT_NAME }}"
+      ARCHITECTURE: "x86_64-unknown-linux-musl"
+      HTTP_IP: "${{ vars.HTTP_IP }}"
+      HTTP_PORT: ${{ vars.HTTP_PORT }}
+      HTTP_USER: "${{ vars.HTTP_USER }}"
+      # secrets
+      HTTP_PASSWORD: ${{ secrets.HTTP_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - name: Action - install justfile tool
+        uses: extractions/setup-just@v2
+        with:
+          just-version: "1.14.0"
+
+      - name: Action - install zig
+        uses: goto-bus-stop/setup-zig@v2.2.0
+        with:
+          version: "0.12.0"
+
+      - name: Action - install rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1.9.0
+
+      - name: Setup - ping basic tools and perform pre-installation
+        shell: bash
+        run: |-
+          just --version
+          zig version
+          rustup --version
+          rustc --version
+          cargo --version
+
+      - name: Setup - Environment + Settings
+        shell: bash
+        run: |
+          touch .env && rm .env
+          echo '
+          ARTEFACT_NAME="${{ env.ARTEFACT_NAME }}"
+          PROJECT_NAME="${{ env.PROJECT_NAME }}"
+          HTTP_IP="${{ env.HTTP_IP }}"
+          HTTP_PORT=${{ env.HTTP_PORT }}
+          HTTP_USER="${{ env.HTTP_USER }}"
+          HTTP_PASSWORD="${{ env.HTTP_PASSWORD }}"
+          ARCHITECTURE="${{ env.ARCHITECTURE }}"
+          ' > .env
+          just setup
+
+      - name: STEP 1 - build code
+        shell: bash
+        run: |-
+          just build
+
+      - name:  STEP 2 - run linting
+        shell: bash
+        run: |-
+          # NOTE: passively checks if linting _can_ be performed not if it _has_ been performed.
+          # NOTE: path-patterns look unintuitive, but they are correct (i.e. *.rs instead of **/*.rs).
+          just lint "src/*.rs"
+          # just lint "tests/*.rs" # currently no files
+
+      - name:  STEP 3 - run unit tests
+        shell: bash
+        run: |-
+          just tests-unit
+
+      - name:  STEP 4 - run behavioural tests
+        shell: bash
+        run: |-
+          just tests-behave
+
+      - name:  STEP 5 - run the binary and ping the service
+        shell: bash
+        run: |-
+          just run-binary &
+          curl 'http://${{ env.HTTP_IP }}:${{ env.HTTP_PORT }}/api/ping'
