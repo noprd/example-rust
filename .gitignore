@@ -1,0 +1,66 @@
+/**
+!/.gitattributes
+!/.gitignore
+!/.dockerignore
+
+# ----------------------------------------------------------------
+# ROOT
+# ----------------------------------------------------------------
+
+!/README.md
+!/LICENCE
+!/justfile
+!/Cargo.toml
+!/cargo.lock
+!/.behaverc
+# docker
+!/Dockerfile
+!/docker-compose.yaml
+# for git workflows
+!/.github
+!/.github/workflows
+!/.github/workflows/*.yaml
+
+# ----------------------------------------------------------------
+# PROJECT
+# ----------------------------------------------------------------
+
+!/templates
+!/templates/template*
+
+!/docs
+!/docs/**/
+!/docs/**/*.md
+
+!/models
+!/models/*.yaml
+
+!/src
+!/src/**/
+!/src/**/*.rs
+
+!/tests
+!/tests/**/
+!/tests/**/*.rs
+
+!/dist
+!/dist/VERSION
+
+# ----------------------------------------------------------------
+# FORCE REMOVE
+# ----------------------------------------------------------------
+
+**/.session
+**/logs
+**/.vscode
+**/*.tmp
+**/.DS_Store
+**/__archive__*
+**/__pycache__*
+/build
+
+# ----------------------------------------------------------------
+# FORCE RETAIN
+# ----------------------------------------------------------------
+
+!**/.gitkeep

@@ -1,0 +1,96 @@
+name: Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker-image:
+        description: Choice of docker image on which to run action.
+        default: ubuntu-latest
+        type: choice
+        options:
+          - ubuntu-latest
+      environment:
+        description: 'Choice of environment for pipeline'
+        # NOTE: this option provides dropdown list of choices of environments set on GitHub (enterprise only)
+        type: environment
+        required: true
+        default: 'test'
+      # NOTE: currently not used, but can use in future
+      log-level:
+        description: 'Log level'
+        default: INFO
+        type: choice
+        options:
+          - INFO
+          - DEBUG
+          - WARNING
+
+jobs:
+  build:
+    name: DEPLOY
+    # runs-on: [self-hosted, "${{ github.event.inputs.os }}", x64, gpu]
+    runs-on: ${{ github.event.inputs.docker-image }}
+    environment: "${{ github.event.inputs.environment }}"
+    env:
+      # vars - http
+      HTTP_IP: "${{ vars.HTTP_IP }}"
+      HTTP_PORT: ${{ vars.HTTP_PORT }}
+      HTTP_USER: "${{ vars.HTTP_USER }}"
+      # vars - rust
+      ARTEFACT_NAME: "${{ vars.ARTEFACT_NAME }}"
+      PROJECT_NAME: "${{ vars.PROJECT_NAME }}"
+      ARCHITECTURE: "x86_64-unknown-linux-musl"
+      # secrets
+      HTTP_PASSWORD: "${{ secrets.HTTP_PASSWORD }}"
+
+    steps:
+      - name: Action - checkout repo
+        uses: actions/checkout@v4.1.7
+
+      - name: Action - install justfile tool
+        uses: extractions/setup-just@v2
+        with:
+          just-version: "1.34.0"
+
+      - name: Action - install zig
+        uses: goto-bus-stop/setup-zig@v2.2.0
+        with:
+          version: "0.12.0"
+
+      - name: Action - install rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1.9.0
+
+      - name: Setup - ping basic tools and perform pre-installation
+        shell: bash
+        run: |-
+          just --version
+          zig version
+          rustup --version
+          rustc --version
+          cargo --version
+
+      - name: Setup - Environment + Settings
+        shell: bash
+        run: |
+          touch .env && rm .env
+          echo '
+          ARTEFACT_NAME="${{ env.ARTEFACT_NAME }}"
+          PROJECT_NAME="${{ env.PROJECT_NAME }}"
+          HTTP_IP="${{ env.HTTP_IP }}"
+          HTTP_PORT=${{ env.HTTP_PORT }}
+          HTTP_USER="${{ env.HTTP_USER }}"
+          HTTP_PASSWORD="${{ env.HTTP_PASSWORD }}"
+          ARCHITECTURE="${{ env.ARCHITECTURE }}"
+          ' > .env
+          just setup
+
+      - name: Build - compile code and move artefact
+        shell: bash
+        run: |
+          just build
+
+      - name: Release - Deploy artefact
+        shell: bash
+        run: |
+          # cp target/release/${{ env.PROJECT_NAME }}
+          echo "Not yet implemented"
