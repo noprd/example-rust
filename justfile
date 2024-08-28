@@ -103,12 +103,6 @@ setup:
     @mkdir -p ".vscode"
     @- cp -n "templates/template.env" ".env"
     @- cp -n "templates/template-config.yaml" "setup/config.yaml"
-    @- cp -n "templates/template-extensions.json" ".vscode/extensions.json"
-    @- cp -n "templates/template-launch.json" ".vscode/launch.json"
-    @- cp -n "templates/template-settings.json" ".vscode/settings.json"
-    @- cp -n "templates/template-tasks.json" ".vscode/tasks.json"
-    @- cp -n "templates/template-host.json" "host.json"
-    @- cp -n "templates/template-local.settings.json" "local.settings.json"
 
 build:
     @echo "TASK: BUILD"
