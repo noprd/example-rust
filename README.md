@@ -146,4 +146,12 @@ docker system prune
 
 > [!WARNING]
 > The latter command clears _all_ docker images, containers, etc.
-> not just for this project.
+> not just for this project##
+
+## References ##
+
+Some of the source code (see [src/main.rs](src/main.rs))
+was initially adapted from the code in [@alfredodeza/rust-azure-function](https://github.com/alfredodeza/rust-azure-function).
+In our repository, we refactored this and took things in a completely different direction.
+We wrote the task scripts ([justfile](justfile)),
+docker infrastructure, etc. completely independently.
