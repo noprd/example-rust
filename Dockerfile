@@ -6,7 +6,7 @@ FROM rust:1.80.1-slim AS stage-basic
 
 ARG USER
 ARG APP
-ARG WORKDIR
+ARG WD
 ARG HTTP_IP
 ARG HTTP_PORT
 ARG HTTP_USER
@@ -21,11 +21,11 @@ RUN groupadd --gid 999 ${USER} \
     && useradd --uid 1001 --gid 999 --create-home ${USER}
 
 # Running instance should own the code, as task automation leads to changes.
-COPY . ${WORKDIR}
-RUN chown -R ${USER}:${USER} ${WORKDIR}
+COPY . ${WD}
+RUN chown -R ${USER}:${USER} ${WD}
 
 USER root
-WORKDIR ${WORKDIR}
+WORKDIR ${WD}
 COPY . .
 
 FROM stage-basic AS stage1
