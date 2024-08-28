@@ -22,7 +22,7 @@ services:
       args:
         USER: "${DOCKER_USER}"
         APP: "${DOCKER_APP}"
-        WORKDIR: "${DOCKER_WORKDIR}"
+        WD: "${DOCKER_WORKDIR}"
         HTTP_IP: "0.0.0.0"
         # NOTE: only this is different
         HTTP_PORT: ${DOCKER_PORT_CONTAINER}
